@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skillverse — Project Video Showcase & Mentor Presentation</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    .glow-orb { animation: pulseGlow 6s ease-in-out infinite; }
+    .progress-bar-fill { transition: width 0.1s linear; }
+    .active-card { border-color: #6366f1; box-shadow: 0 0 25px rgba(99, 102, 241, 0.4); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none overflow-x-hidden">
+
+  <!-- Top Bar / Control Deck -->
+  <header class="bg-slate-900/90 border-b border-slate-800 px-6 py-3 sticky top-0 z-50 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/30">
+        🪐
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight flex items-center gap-2">
+          <span>Skillverse</span>
+          <span class="text-xs bg-indigo-500/20 text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-500/30">Mentor Presentation Video</span>
+        </h1>
+        <p class="text-xs text-slate-400">Adaptive Neurodivergent Child Development Platform</p>
+      </div>
+    </div>
+
+    <!-- Playback Controls -->
+    <div class="flex items-center gap-2">
+      <button id="btnPrev" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1">
+        ⏮️ Prev
+      </button>
+      <button id="btnPlay" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5">
+        <span id="playIcon">⏸️</span> <span id="playText">Pause</span>
+      </button>
+      <button id="btnNext" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1">
+        Next ⏭️
+      </button>
+      <div class="h-6 w-px bg-slate-700 mx-1"></div>
+      <button id="btnVoice" class="px-3 py-1.5 rounded-lg bg-purple-900/40 border border-purple-500/30 text-purple-300 hover:bg-purple-900/60 text-xs font-semibold transition flex items-center gap-1">
+        <span id="voiceIcon">🔊</span> Auto-Voice: <strong id="voiceStatus">ON</strong>
+      </button>
+      <button id="btnFullscreen" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition" title="Toggle Fullscreen">
+        ⛶ Fullscreen
+      </button>
+    </div>
+
+    <!-- Timeline indicators -->
+    <div class="flex items-center gap-2 text-xs text-slate-400">
+      <span id="sceneCounter" class="font-mono text-indigo-400 font-bold">01 / 12</span>
+    </div>
+  </header>
+
+  <!-- Progress Bar (Scene Timeline) -->
+  <div class="w-full bg-slate-800 h-1.5 relative overflow-hidden">
+    <div id="timelineProgress" class="progress-bar-fill bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full w-0"></div>
+  </div>
+
+  <!-- Video Screen Viewport -->
+  <main class="flex-1 flex flex-col items-center justify-center p-6 relative">
+    <!-- Ambient background glows -->
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl glow-orb pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl glow-orb pointer-events-none"></div>
+
+    <!-- Main Screen Stage (16:9 Aspect ratio frame) -->
+    <div id="stageFrame" class="w-full max-w-5xl bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl p-8 sm:p-12 relative overflow-hidden flex flex-col justify-between min-h-[520px]">
+      
+      <!-- Scene Content Injector -->
+      <div id="sceneContainer" class="flex-1 flex flex-col justify-center transition-all duration-500">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+      <!-- Subtitle / Voiceover Bar (Live Captions) -->
+      <div class="mt-8 pt-4 border-t border-slate-800/80 flex items-start gap-3 bg-slate-950/60 p-4 rounded-2xl border border-indigo-500/20">
+        <span class="text-xl">🎙️</span>
+        <div class="flex-1">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 mb-0.5">Voice-Over Script (Read this or listen to Auto-Voice):</p>
+          <p id="captionText" class="text-sm text-slate-200 font-medium leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene Selector Dots -->
+    <div id="dotsNav" class="flex gap-2 mt-6 flex-wrap justify-center max-w-3xl">
+      <!-- Generated by JS -->
+    </div>
+  </main>
+
+  <!-- How to Record Guide -->
+  <footer class="bg-slate-900/60 border-t border-slate-800/60 py-3 px-6 text-center text-xs text-slate-400">
+    <p>💡 <strong class="text-slate-200">How to record for your mentor:</strong> Press <kbd class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-indigo-300 font-mono">Win + Alt + R</kbd> (or <kbd class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-indigo-300 font-mono">Win + G</kbd>) on Windows to record your screen directly into an MP4 video while this showcase plays!</p>
+  </footer>
+
+  <script>
+    const SCENES = [
+      {
+        id: 1,
+        title: "Skillverse — Project Overview & Vision",
+        category: "PROJECT INTRODUCTION",
+        badgeColor: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+        duration: 16,
+        icon: "🚀",
+        html: `
+          <div class="space-y-6">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+              🎓 5th Semester Major Project Presentation
+            </div>
+            <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+              Skillverse: An Adaptive Learning & Emotional Growth World
+            </h2>
+            <p class="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
+              A comprehensive full-stack ecosystem designed specifically for <strong class="text-indigo-400">neurodivergent children (ADHD, Autism Spectrum, Sensory Sensitivity)</strong> aged 6–17. It blends gamified executive functioning training, real-time emotion regulation, and an evidence-backed guardian telemetry dashboard.
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+              <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+                <p class="text-2xl mb-1">🎮</p>
+                <p class="font-bold text-sm text-white">9 Skill Worlds</p>
+                <p class="text-xs text-slate-400">Time, Feelings, Faces & more</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+                <p class="text-2xl mb-1">🐾</p>
+                <p class="font-bold text-sm text-white">AI Companions</p>
+                <p class="text-xs text-slate-400">4-Stage Evolution System</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+                <p class="text-2xl mb-1">📈</p>
+                <p class="font-bold text-sm text-white">Adaptive Difficulty</p>
+                <p class="text-xs text-slate-400">3-tier automatic tuning</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+                <p class="text-2xl mb-1">🛡️</p>
+                <p class="font-bold text-sm text-white">Guardian Control</p>
+                <p class="text-xs text-slate-400">COPPA & Non-medical Ack</p>
+              </div>
+            </div>
+          </div>
+        `,
+        script: "Hello Sir. Welcome to the demonstration of Skillverse, our 5th-semester mini project. Skillverse is an adaptive, gamified web platform built specifically for neurodivergent children aged 6 to 17. It bridges cognitive skill building, socio-emotional learning, and parental oversight into a safe, accessible desktop experience."
+      },
+      {
+        id: 2,
+        title: "System Architecture & Engineering Stack",
+        category: "ARCHITECTURE & TECH STACK",
+        badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+        duration: 17,
+        icon: "⚡",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Full-Stack Enterprise Architecture</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="p-6 rounded-2xl bg-slate-800/50 border border-blue-500/30 space-y-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">⚛️</span>
+                  <h3 class="font-bold text-lg text-blue-300">Frontend: Next.js 16 (App Router)</h3>
+                </div>
+                <ul class="text-xs sm:text-sm text-slate-300 space-y-2">
+                  <li>• <strong>Turbopack engine</strong> for sub-second reactive rendering.</li>
+                  <li>• <strong>WCAG 2.1 AA Compliance:</strong> Contrast ratios, focus outlines, Calm Mode (motion suppression).</li>
+                  <li>• <strong>Client Architecture:</strong> Decoupled API service clients with HttpOnly cookie sessions.</li>
+                  <li>• <strong>Universal Themes:</strong> Space, Ocean, Jungle with dynamic CSS variables.</li>
+                </ul>
+              </div>
+              <div class="p-6 rounded-2xl bg-slate-800/50 border border-purple-500/30 space-y-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">🦁</span>
+                  <h3 class="font-bold text-lg text-purple-300">Backend: NestJS + Prisma ORM</h3>
+                </div>
+                <ul class="text-xs sm:text-sm text-slate-300 space-y-2">
+                  <li>• <strong>Modular Design:</strong> 8 independent Domain Modules with Global Auth Guards.</li>
+                  <li>• <strong>SQLite Storage:</strong> Strict referential integrity, cascading deletions for COPPA compliance.</li>
+                  <li>• <strong>Dual JWT Tiers:</strong> Standard Auth vs Guardian Action Tokens (for destructive acts).</li>
+                  <li>• <strong>Idempotent Seeders:</strong> 6 Companions, 11 Items, 15 Collectibles, 10 Badges.</li>
+                </ul>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 font-mono bg-slate-950 p-3 rounded-xl border border-slate-800">
+              Endpoints: Auth (8) • Children (4) • Companions (5) • Economy (7) • Journey (6) • Dashboard (1) • Screen-Time (2)
+            </p>
+          </div>
+        `,
+        script: "On the engineering side, Skillverse is architected as a decoupled, multi-tier system. The frontend runs on Next.js 16 with the Turbopack engine, delivering accessible, WCAG AA compliant interfaces with custom soundscapes. The backend is powered by NestJS with Prisma ORM and SQLite, featuring strict schema constraints, dual JWT security tiers, and 8 domain modules."
+      },
+      {
+        id: 3,
+        title: "Guardian Onboarding & 19-Parameter Sensory Profiling",
+        category: "MODULE 01 & 02: CHILD PROFILE",
+        badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+        duration: 17,
+        icon: "📋",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Personalization & Clinical Nuance</h2>
+            <p class="text-slate-300 text-sm">
+              Instead of generic age-gates, guardians complete an evidence-informed 19-parameter intake questionnaire.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-slate-700">
+                <div class="text-xl mb-1">🎧</div>
+                <h4 class="font-bold text-sm text-emerald-400">Sensory Inputs</h4>
+                <p class="text-xs text-slate-400 mt-1">Q1–Q3 track sound sensitivity, motion triggers, and transition warnings.</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-slate-700">
+                <div class="text-xl mb-1">⏱️</div>
+                <h4 class="font-bold text-sm text-emerald-400">Cognitive Load</h4>
+                <p class="text-xs text-slate-400 mt-1">Q4 Attention Span automatically derives task breakdown granularity (Fine, Medium, Coarse).</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-slate-700">
+                <div class="text-xl mb-1">🧘</div>
+                <h4 class="font-bold text-sm text-emerald-400">Emotional Support</h4>
+                <p class="text-xs text-slate-400 mt-1">Q6–Q8 define regulation strategies (Breathing, Adult Support) and visual prompts.</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-center gap-3">
+              <span class="text-2xl">🔒</span>
+              <p class="text-xs text-emerald-300">
+                <strong>Legal Safety:</strong> Mandatory Non-Medical Device Acknowledgement and COPPA parent consent are captured prior to child profile creation.
+              </p>
+            </div>
+          </div>
+        `,
+        script: "Before a child begins, guardians complete an intake assessment covering 19 distinct parameters: sound sensitivity, motion comfort, attention span, and regulation habits. The backend algorithmically derives difficulty baselines and UI configurations directly from these answers, guaranteeing that a child with sensory sensitivities is never overwhelmed."
+      },
+      {
+        id: 4,
+        title: "AI Companion System & Emotional Zone Check-Ins",
+        category: "MODULE 03: EMOTIONAL COPING",
+        badgeColor: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+        duration: 17,
+        icon: "🦊",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Emotional Co-Regulation Companions</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-pink-500/30 space-y-3">
+                <h4 class="font-bold text-pink-300 flex items-center gap-2">
+                  <span>🐾</span> 4-Tier Companion Evolution
+                </h4>
+                <p class="text-xs text-slate-300">Children adopt a starter (Robot, Dragon, Owl) or unlock level species (Fox, Turtle, Octopus). Companions evolve visually as stars are earned:</p>
+                <div class="flex justify-between text-center pt-2">
+                  <div class="bg-slate-900 px-3 py-2 rounded-xl border border-slate-800"><p class="text-xs font-bold text-slate-400">Lv 1</p><p class="text-[11px] text-pink-400">Hatchling</p></div>
+                  <div class="bg-slate-900 px-3 py-2 rounded-xl border border-slate-800"><p class="text-xs font-bold text-slate-400">Lv 5</p><p class="text-[11px] text-pink-400">Companion</p></div>
+                  <div class="bg-slate-900 px-3 py-2 rounded-xl border border-slate-800"><p class="text-xs font-bold text-slate-400">Lv 10</p><p class="text-[11px] text-pink-400">Trusted</p></div>
+                  <div class="bg-slate-900 px-3 py-2 rounded-xl border border-slate-800"><p class="text-xs font-bold text-slate-400">Lv 25</p><p class="text-[11px] text-pink-400">Hero</p></div>
+                </div>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-pink-500/30 space-y-3">
+                <h4 class="font-bold text-pink-300 flex items-center gap-2">
+                  <span>💓</span> Heart Button & 4 Emotional Zones
+                </h4>
+                <p class="text-xs text-slate-300">Accessible on every page, children tap the Heart Button to express their current zone:</p>
+                <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                  <div class="p-2 rounded-lg bg-blue-900/30 border border-blue-500/30 font-semibold text-blue-300">🟦 Blue: Tired / Low</div>
+                  <div class="p-2 rounded-lg bg-emerald-900/30 border border-emerald-500/30 font-semibold text-emerald-300">🟩 Green: Calm / Ready</div>
+                  <div class="p-2 rounded-lg bg-yellow-900/30 border border-yellow-500/30 font-semibold text-yellow-300">🟨 Yellow: Anxious / Excited</div>
+                  <div class="p-2 rounded-lg bg-rose-900/30 border border-rose-500/30 font-semibold text-rose-300">🟥 Red: Overwhelmed</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Check-in triggers tailored exercises (pacing breaths, muscle unclench, water break) and logs mood telemetry to the guardian dashboard.</p>
+          </div>
+        `,
+        script: "A key innovation in Skillverse is the AI Companion system. Children adopt virtual companions that evolve across four developmental tiers as they progress. Furthermore, the ubiquitous Heart Button allows one-click check-ins across four emotional zones: Blue, Green, Yellow, and Red, offering calming interventions and recording telemetry for parents."
+      },
+      {
+        id: 5,
+        title: "Universal Theme System & Sensory Accommodations",
+        category: "MODULE 04: SENSORY COMFORT",
+        badgeColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+        duration: 16,
+        icon: "🎨",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Adaptive Sensory Aesthetics</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-5 rounded-2xl bg-slate-900 border border-indigo-500/40 text-center space-y-2">
+                <span class="text-4xl">🌌</span>
+                <h4 class="font-bold text-indigo-400 text-sm">Space Adventure</h4>
+                <p class="text-xs text-slate-400">Deep indigo palettes with rocket milestones, star dust rewards, and cosmic soundscapes.</p>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-900 border border-cyan-500/40 text-center space-y-2">
+                <span class="text-4xl">🌊</span>
+                <h4 class="font-bold text-cyan-400 text-sm">Ocean Voyage</h4>
+                <p class="text-xs text-slate-400">Aquatic blues with gentle wave pulses, coral reefs, and calm submarine audio.</p>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-900 border border-emerald-500/40 text-center space-y-2">
+                <span class="text-4xl">🌿</span>
+                <h4 class="font-bold text-emerald-400 text-sm">Jungle Expedition</h4>
+                <p class="text-xs text-slate-400">Warm earthy greens, rainforest birds, firefly ambiances, and trail pathways.</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-wrap items-center justify-around gap-4 text-xs">
+              <span class="flex items-center gap-1.5 font-bold text-slate-200">🌓 Dark Mode Native</span>
+              <span class="flex items-center gap-1.5 font-bold text-slate-200">🕊️ Calm Mode (Zero Motion)</span>
+              <span class="flex items-center gap-1.5 font-bold text-slate-200">🔔 Low-Frequency Chimes</span>
+              <span class="flex items-center gap-1.5 font-bold text-slate-200">🎶 Optional Ambient BGM</span>
+            </div>
+          </div>
+        `,
+        script: "Neurodivergent learners often suffer sensory fatigue from flashy graphics. Skillverse addresses this with three immersive, accessible themes: Space, Ocean, and Jungle. Built with CSS custom properties, it includes instant toggles for Calm Mode, Dark Mode, and low-frequency auditory chimes."
+      },
+      {
+        id: 6,
+        title: "Explorer Hub Shell & Daily Journey Quests",
+        category: "MODULE 05: HUB & JOURNEY",
+        badgeColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+        duration: 16,
+        icon: "🧭",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">The Child's Command Center</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-amber-500/30 space-y-3">
+                <h4 class="font-bold text-amber-300 flex items-center gap-2">
+                  <span>🗺️</span> Today's Quest Journey
+                </h4>
+                <p class="text-xs text-slate-300">Blends digital games with <strong>real-world tasks</strong> assigned by guardians (e.g. Brush Teeth, Tidy Desk, 10-Minute Reading):</p>
+                <div class="space-y-2 text-xs">
+                  <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <span>🪥 Morning Routine (Real Life)</span>
+                    <span class="font-bold text-amber-400">+2 ⭐ / +1 🪙</span>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <span>🚀 Launch Challenge (Game)</span>
+                    <span class="font-bold text-amber-400">+3 ⭐ / +2 🪙</span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-amber-500/30 space-y-3">
+                <h4 class="font-bold text-amber-300 flex items-center gap-2">
+                  <span>⭐</span> Non-Punitive Level Progression
+                </h4>
+                <p class="text-xs text-slate-300">Each level requires 50 cumulative stars. Children never lose levels or experience penalties for breaks or incorrect attempts.</p>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1.5">
+                  <div class="flex justify-between text-xs font-bold text-slate-300">
+                    <span>Level 1 Explorer</span>
+                    <span>18 / 50 ⭐</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-amber-400 h-2 rounded-full w-[36%]"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Includes quiet-hours bedtime locks and direct parent-switch shortcuts protected by security checks.</p>
+          </div>
+        `,
+        script: "The Hub Shell serves as the primary home screen. It hosts the child's daily quest journey, seamlessly uniting mini-game challenges with real-life habit tracking configured by parents. Level progression is strictly non-punitive: kids earn stars and level up, but never lose points or experience anxiety-inducing countdown timers."
+      },
+      {
+        id: 7,
+        title: "Mini-Game 1: Launch Challenge (Time World)",
+        category: "MODULE 06 & 07: TIME PERCEPTION",
+        badgeColor: "bg-violet-500/20 text-violet-400 border-violet-500/30",
+        duration: 17,
+        icon: "🕐",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Time World: Executive Functioning</h2>
+            <p class="text-slate-300 text-sm">
+              Neurodivergent individuals often struggle with "time blindness". Launch Challenge trains sequential time perception through interactive space launches.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-violet-500/30">
+                <h4 class="font-bold text-sm text-violet-300">🟢 Tier 1: Easy</h4>
+                <p class="text-xs text-slate-400 mt-1">Single-hour clock matching & sequence ordering (e.g. Breakfast vs Dinner).</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-violet-500/30">
+                <h4 class="font-bold text-sm text-violet-300">🟡 Tier 2: Medium</h4>
+                <p class="text-xs text-slate-400 mt-1">Half-hour reading & duration estimation (e.g., 20m cleanup countdown).</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-violet-500/30">
+                <h4 class="font-bold text-sm text-violet-300">🔴 Tier 3: Hard</h4>
+                <p class="text-xs text-slate-400 mt-1">Quarter-hour clocks & scheduling multi-step timelines without hints.</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-300">Boss Challenge: 8-round Space Launch Sequence</span>
+              <span class="font-bold text-violet-400">Reward: Chrono Cadet Badge 🎖️</span>
+            </div>
+          </div>
+        `,
+        script: "Now let's examine the mini-games. The first game, Launch Challenge in Time World, tackles time blindness. Through three difficulty tiers, children practice reading clock hands, distinguishing morning versus evening sequences, and estimating activity durations to launch their rockets."
+      },
+      {
+        id: 8,
+        title: "Mini-Games 2 & 3: Volcano Scale & Face Detective",
+        category: "MODULE 06 & 07: SOCIO-EMOTIONAL SKILLS",
+        badgeColor: "bg-red-500/20 text-red-400 border-red-500/30",
+        duration: 17,
+        icon: "🌋",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Emotional Granularity & Empathy</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-rose-500/30 space-y-3">
+                <h4 class="font-bold text-rose-300 flex items-center gap-2">
+                  <span>🌋</span> Volcano Scale (Feelings World)
+                </h4>
+                <p class="text-xs text-slate-300">Teaches children to rate emotional heat from 1 (Warm/Calm) to 5 (Erupting/Overwhelmed).</p>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                  <p class="text-slate-400">Step 1: Identify emotional temperature.</p>
+                  <p class="text-slate-400">Step 2: Choose co-regulation tool (Deep breaths, drawing, counting).</p>
+                  <p class="text-emerald-400 font-bold">Outcome: Volcano cools down safely!</p>
+                </div>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-amber-500/30 space-y-3">
+                <h4 class="font-bold text-amber-300 flex items-center gap-2">
+                  <span>🎭</span> Face Detective (Faces World)
+                </h4>
+                <p class="text-xs text-slate-300">Targets social expression recognition without overwhelming realism.</p>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                  <p class="text-slate-400">Clue: "Eyebrows raised, eyes wide, mouth open in an O"</p>
+                  <p class="font-bold text-amber-400">Answer: Surprised! 😲</p>
+                  <p class="text-slate-400">Includes empathy scenarios for social perspective taking.</p>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Both games dynamically integrate with the child's difficulty profile and trigger positive audio reinforcement.</p>
+          </div>
+        `,
+        script: "The second and third games train emotional intelligence. Volcano Scale guides children to measure their frustration on a 1-to-5 thermometer and select a de-escalation strategy before the volcano erupts. In Faces World, Face Detective uses stylized avatar clues to teach facial cues and social empathy."
+      },
+      {
+        id: 9,
+        title: "Dynamic Adaptive Difficulty Engine",
+        category: "MODULE 08: INTELLIGENT ADAPTIVITY",
+        badgeColor: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+        duration: 17,
+        icon: "🧠",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Algorithmic Frustration Mitigation</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-indigo-500/30 space-y-2">
+                <h4 class="font-bold text-indigo-300">📈 Auto-Escalation Rule</h4>
+                <p class="text-xs text-slate-300">When a child achieves <strong>3 consecutive perfect wins</strong> in a game, the engine seamlessly levels up the tier:</p>
+                <p class="font-mono text-xs text-emerald-400 bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                  Easy (3 wins) ➔ Medium ➔ Hard
+                </p>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-indigo-500/30 space-y-2">
+                <h4 class="font-bold text-indigo-300">🛡️ Distress Detection & Safety Net</h4>
+                <p class="text-xs text-slate-300">If the child exits mid-game, takes excessive time, or fails 2 rounds:</p>
+                <ul class="text-xs text-slate-300 space-y-1">
+                  <li>• Automatic tier step-down (Hard ➔ Medium).</li>
+                  <li>• <strong>No penalty:</strong> full participation stars are refunded.</li>
+                  <li>• Companion offers an immediate calming check-in.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 text-xs text-indigo-300">
+              <strong>Telemetry Logging:</strong> Every session duration, round error count, and adaptation event is stored in SQLite for guardian analysis.
+            </div>
+          </div>
+        `,
+        script: "Our adaptive difficulty engine ensures games stay engaging without inducing anxiety. Following a 3-consecutive-win algorithm, tasks dynamically scale in complexity. Crucially, if frustration or distress is detected, the system immediately steps down the difficulty, refunds participation stars, and invites the child to rest."
+      },
+      {
+        id: 10,
+        title: "Micro-Economy, Avatar Shop & Win Gallery",
+        category: "MODULE 09: REWARDS & ECONOMY",
+        badgeColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+        duration: 17,
+        icon: "🪙",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Zero-Inflation Micro-Economy</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-yellow-500/30 text-center space-y-1">
+                <p class="text-3xl">⭐</p>
+                <h4 class="font-bold text-sm text-yellow-400">Stars (XP)</h4>
+                <p class="text-xs text-slate-400">Earned via games and quests. Fuels overall child level progression.</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-yellow-500/30 text-center space-y-1">
+                <p class="text-3xl">🪙</p>
+                <h4 class="font-bold text-sm text-yellow-400">Coins (Spendable)</h4>
+                <p class="text-xs text-slate-400">1–3 coins per activity. Used in Avatar Shop for hats, outfits & pets.</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-800/50 border border-yellow-500/30 text-center space-y-1">
+                <p class="text-3xl">🏆</p>
+                <h4 class="font-bold text-sm text-yellow-400">Win Gallery</h4>
+                <p class="text-xs text-slate-400">10 distinct milestone badges and 15 rare collectible drops.</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-200">Avatar Shop Customization:</span>
+                <span class="text-yellow-400">11 Catalog Items • 15 Face Expressions</span>
+              </div>
+              <p class="text-xs text-slate-400">All inventory states, equips, and coin transactions map directly to real database rows in SQLite — zero mocked data.</p>
+            </div>
+          </div>
+        `,
+        script: "Module 9 implements a closed, zero-inflation economy. Children earn stars for experience and spendable coins for completing activities. In the Avatar Shop, they can customize their avatar face and purchase hats, shirts, and accessories. Milestone badges and collectibles are stored in the Win Gallery, fostering positive reinforcement."
+      },
+      {
+        id: 11,
+        title: "Guardian Mission Control & Telemetry",
+        category: "MODULE 10: PARENT OVERSIGHT",
+        badgeColor: "bg-teal-500/20 text-teal-400 border-teal-500/30",
+        duration: 17,
+        icon: "🛡️",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Evidence-Based Guardian Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-teal-500/30 space-y-2">
+                <h4 class="font-bold text-teal-300">📊 7-Day Mission Report</h4>
+                <ul class="text-xs text-slate-300 space-y-1.5">
+                  <li>• Total playtime vs daily screen-time limits.</li>
+                  <li>• Emotional check-in distribution (Blue, Green, Yellow, Red).</li>
+                  <li>• Skill growth metrics across all 3 active worlds.</li>
+                  <li>• Real-life quest completion consistency.</li>
+                </ul>
+              </div>
+              <div class="p-5 rounded-2xl bg-slate-800/50 border border-teal-500/30 space-y-2">
+                <h4 class="font-bold text-teal-300">🔐 Privacy & Consent Controls</h4>
+                <ul class="text-xs text-slate-300 space-y-1.5">
+                  <li>• <strong>Parent Gate:</strong> 15-minute in-memory password verification.</li>
+                  <li>• <strong>Screen Time & Quiet Hours:</strong> Automatic evening lockout.</li>
+                  <li>• <strong>Data Portability:</strong> Complete JSON export (excluding credentials).</li>
+                  <li>• <strong>Account Deletion:</strong> Irreversible cascade transaction.</li>
+                </ul>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Parents gain deep psychological visibility into emotional trends without invading their child's playful autonomy.</p>
+          </div>
+        `,
+        script: "The Guardian Dashboard offers parents comprehensive oversight. Protected by a dedicated password gate, it aggregates a rolling 7-day mission report displaying playtime, emotional zone distributions, and game session telemetry. It also enforces bedtime quiet hours and provides one-click COPPA data export."
+      },
+      {
+        id: 12,
+        title: "Conclusion & Project Significance",
+        category: "CONCLUSION & FUTURE HORIZONS",
+        badgeColor: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+        duration: 18,
+        icon: "🌟",
+        html: `
+          <div class="space-y-6">
+            <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight">Impact & Academic Contribution</h2>
+            <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/40 space-y-3">
+              <h3 class="text-lg font-bold text-white">Summary of Accomplishments:</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                ✅ Built all 11 full-stack modules end-to-end with clean TypeScript compilation.<br/>
+                ✅ Unified cognitive training, socio-emotional regulation, and parental telemetry.<br/>
+                ✅ Solved sensory overload through Calm Mode, adaptive colorways, and low-stimulus sound.<br/>
+                ✅ Created an automated 3-win adaptive difficulty engine with distress safeguards.<br/>
+                ✅ Deployed full source code to GitHub with verifiable SQLite persistence.
+              </p>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-400 pt-2">
+              <p>Repo: <span class="text-indigo-400 font-mono">github.com/aadi9792/mini-project-5th-sem</span></p>
+              <p>Thank you for your guidance, Mentor!</p>
+            </div>
+          </div>
+        `,
+        script: "In conclusion, Skillverse successfully delivers all eleven specified architectural modules. By harmonizing neurodivergent-friendly UI design, dynamic difficulty adaptation, and clinical guardian reporting, the project proves that digital learning can be both delightfully engaging and psychologically therapeutic. Thank you for your time and mentorship."
+      }
+    ];
+
+    let currentIdx = 0;
+    let isPlaying = true;
+    let timer = null;
+    let elapsedMs = 0;
+    let autoVoice = true;
+    let currentUtterance = null;
+
+    const container = document.getElementById("sceneContainer");
+    const captionEl = document.getElementById("captionText");
+    const progressEl = document.getElementById("timelineProgress");
+    const counterEl = document.getElementById("sceneCounter");
+    const dotsNav = document.getElementById("dotsNav");
+
+    const btnPlay = document.getElementById("btnPlay");
+    const playIcon = document.getElementById("playIcon");
+    const playText = document.getElementById("playText");
+    const btnPrev = document.getElementById("btnPrev");
+    const btnNext = document.getElementById("btnNext");
+    const btnVoice = document.getElementById("btnVoice");
+    const voiceStatus = document.getElementById("voiceStatus");
+    const voiceIcon = document.getElementById("voiceIcon");
+    const btnFullscreen = document.getElementById("btnFullscreen");
+
+    // Init Dots
+    SCENES.forEach((s, idx) => {
+      const dot = document.createElement("button");
+      dot.className = `h-2 rounded-full transition-all duration-300 ${idx === 0 ? "w-8 bg-indigo-500" : "w-2.5 bg-slate-700 hover:bg-slate-600"}`;
+      dot.title = `Jump to Scene ${idx + 1}: ${s.title}`;
+      dot.onclick = () => jumpToScene(idx);
+      dotsNav.appendChild(dot);
+    });
+
+    function speakText(text) {
+      if (!autoVoice || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.rate = 1.0;
+      utt.pitch = 1.0;
+      currentUtterance = utt;
+      window.speechSynthesis.speak(utt);
+    }
+
+    function renderScene(idx) {
+      const s = SCENES[idx];
+      elapsedMs = 0;
+      progressEl.style.width = "0%";
+      counterEl.textContent = `${String(idx + 1).padStart(2, "0")} / ${String(SCENES.length).padStart(2, "0")}`;
+
+      // Update dots
+      Array.from(dotsNav.children).forEach((dot, dIdx) => {
+        if (dIdx === idx) {
+          dot.className = "h-2 w-8 bg-indigo-500 rounded-full transition-all duration-300";
+        } else {
+          dot.className = "h-2 w-2.5 bg-slate-700 hover:bg-slate-600 rounded-full transition-all duration-300";
+        }
+      });
+
+      container.style.opacity = "0";
+      setTimeout(() => {
+        container.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold px-3 py-1 rounded-full border ${s.badgeColor}">
+                ${s.category}
+              </span>
+              <span class="text-2xl">${s.icon}</span>
+            </div>
+            ${s.html}
+          </div>
+        `;
+        captionEl.textContent = s.script;
+        container.style.opacity = "1";
+        speakText(s.script);
+      }, 200);
+    }
+
+    function jumpToScene(idx) {
+      currentIdx = idx;
+      renderScene(currentIdx);
+    }
+
+    function nextScene() {
+      if (currentIdx < SCENES.length - 1) {
+        currentIdx++;
+        renderScene(currentIdx);
+      } else {
+        // loop back to start
+        currentIdx = 0;
+        renderScene(0);
+      }
+    }
+
+    function prevScene() {
+      if (currentIdx > 0) {
+        currentIdx--;
+        renderScene(currentIdx);
+      }
+    }
+
+    btnPlay.onclick = () => {
+      isPlaying = !isPlaying;
+      playIcon.textContent = isPlaying ? "⏸️" : "▶️";
+      playText.textContent = isPlaying ? "Pause" : "Play";
+      if (!isPlaying && window.speechSynthesis) {
+        window.speechSynthesis.pause();
+      } else if (isPlaying && window.speechSynthesis) {
+        window.speechSynthesis.resume();
+      }
+    };
+
+    btnNext.onclick = nextScene;
+    btnPrev.onclick = prevScene;
+
+    btnVoice.onclick = () => {
+      autoVoice = !autoVoice;
+      voiceStatus.textContent = autoVoice ? "ON" : "OFF";
+      voiceIcon.textContent = autoVoice ? "🔊" : "🔇";
+      if (!autoVoice && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      } else if (autoVoice) {
+        speakText(SCENES[currentIdx].script);
+      }
+    };
+
+    btnFullscreen.onclick = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+
+    // Keyboard shortcuts: Space to pause, arrows to jump
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        btnPlay.click();
+      } else if (e.code === "ArrowRight") {
+        nextScene();
+      } else if (e.code === "ArrowLeft") {
+        prevScene();
+      }
+    });
+
+    // Main animation ticker
+    const tickIntervalMs = 100;
+    setInterval(() => {
+      if (!isPlaying) return;
+      const totalMs = SCENES[currentIdx].duration * 1000;
+      elapsedMs += tickIntervalMs;
+      const pct = Math.min(100, (elapsedMs / totalMs) * 100);
+      progressEl.style.width = pct + "%";
+
+      if (elapsedMs >= totalMs) {
+        nextScene();
+      }
+    }, tickIntervalMs);
+
+    // Initial render
+    renderScene(0);
+  </script>
+</body>
+</html>
