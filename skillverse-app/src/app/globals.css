@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+:root {
+  /* Functional / Base tokens - Space default */
+  --sv-bg: #f3f7ff;
+  --sv-bg-soft: #eaf1ff;
+  --sv-primary: #4fa6c9;
+  --sv-primary-deep: #2d799b;
+  --sv-secondary: #a79be0;
+  --sv-secondary-deep: #8577c9;
+  --sv-card-tint: #f6f4ff;
+  --sv-card: #ffffff;
+  --sv-text: #2e3350;
+  --sv-text-soft: #6b7191;
+  --sv-ink: #2e3350;
+  --sv-success: #6fc3a0;
+  --sv-attention: #ffbf69;
+  --sv-warning: #e38b8b;
+}
+
+[data-theme="ocean"] {
+  --sv-bg: #eafbfb;
+  --sv-bg-soft: #dbf4f3;
+  --sv-primary: #2aa9a0;
+  --sv-primary-deep: #1f827a;
+  --sv-secondary: #4fb3d9;
+  --sv-secondary-deep: #2f8fb3;
+  --sv-card-tint: #eafcfb;
+}
+
+[data-theme="jungle"] {
+  --sv-bg: #f4f9ef;
+  --sv-bg-soft: #e9f3df;
+  --sv-primary: #6a9955;
+  --sv-primary-deep: #4f7a3d;
+  --sv-secondary: #c98a4b;
+  --sv-secondary-deep: #a66d35;
+  --sv-card-tint: #f1f7ea;
+}
+
+/* Dark Mode Tokens (04 §3.2a) */
+html.dark, .dark {
+  --sv-card: #1e2238;
+  --sv-text: #eef1fb;
+  --sv-text-soft: #8a90b8;
+  --sv-bg: #101426;
+  --sv-bg-soft: #181c33;
+  --sv-primary: #5cb8dc;
+  --sv-primary-deep: #388cb2;
+  --sv-secondary: #b3a8e8;
+  --sv-secondary-deep: #9386d4;
+  --sv-card-tint: #232742;
+}
+
+html.dark[data-theme="ocean"], .dark[data-theme="ocean"] {
+  --sv-bg: #0d1f24;
+  --sv-bg-soft: #132c33;
+  --sv-primary: #36c0b6;
+  --sv-primary-deep: #259b92;
+  --sv-secondary: #5fc3e8;
+  --sv-secondary-deep: #3ba1c7;
+  --sv-card-tint: #162a30;
+}
+
+html.dark[data-theme="jungle"], .dark[data-theme="jungle"] {
+  --sv-bg: #121e14;
+  --sv-bg-soft: #1a2b1d;
+  --sv-primary: #7cb065;
+  --sv-primary-deep: #5f914b;
+  --sv-secondary: #dca162;
+  --sv-secondary-deep: #ba7f45;
+  --sv-card-tint: #1c2b1e;
+}
+
+@theme inline {
+  --color-sv-bg: var(--sv-bg);
+  --color-sv-bg-soft: var(--sv-bg-soft);
+  --color-sv-primary: var(--sv-primary);
+  --color-sv-primary-deep: var(--sv-primary-deep);
+  --color-sv-secondary: var(--sv-secondary);
+  --color-sv-secondary-deep: var(--sv-secondary-deep);
+  --color-sv-card-tint: var(--sv-card-tint);
+  --color-sv-card: var(--sv-card);
+  --color-sv-text: var(--sv-text);
+  --color-sv-text-soft: var(--sv-text-soft);
+  --color-sv-ink: var(--sv-ink);
+  --color-sv-success: var(--sv-success);
+  --color-sv-attention: var(--sv-attention);
+  --color-sv-warning: var(--sv-warning);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+}
+
+body {
+  background-color: var(--sv-bg);
+  color: var(--sv-text);
+  font-family: var(--font-body), Nunito, system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading), "Baloo 2", cursive, sans-serif;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes floatBob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-110vh);
+  }
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  animation: cardEnter 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float-bob {
+  animation: floatBob 4s ease-in-out infinite;
+}
+
+.animate-drift {
+  animation: drift 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-enter,
+  .animate-float-bob,
+  .animate-drift,
+  .star-twinkle {
+    animation: none !important;
+    transition: none !important;
+  }
+}

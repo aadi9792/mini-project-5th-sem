@@ -1,0 +1,252 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 01-auth-and-account.md
+// ───────────────────────────────────────────────────────────────────────────
+
+model Guardian {
+  id                  String    @id @default(cuid())
+  email               String    @unique // always stored lowercase; compare lowercase on lookup
+  passwordHash        String? // null if this account is Google-only
+  googleId            String?   @unique
+  name                String
+  emailVerified       Boolean   @default(false)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime? // null unless currently locked out
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model EmailVerificationToken {
+  id         String    @id @default(cuid())
+  guardianId String
+  tokenHash  String    @unique // SHA-256 of the plain token emailed to the user
+  expiresAt  DateTime // createdAt + 24h
+  usedAt     DateTime?
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  guardianId String
+  tokenHash  String    @unique // SHA-256 of the plain token emailed to the user
+  expiresAt  DateTime // createdAt + 1h
+  usedAt     DateTime?
+}
+
+model RefreshToken {
+  id          String    @id @default(cuid())
+  guardianId  String
+  tokenHash   String    @unique // HMAC-SHA256(token, JWT_REFRESH_SECRET)
+  deviceLabel String? // best-effort User-Agent label, never blocks login if parsing fails
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+}
+
+model ConsentRecord {
+  id                      String   @id @default(cuid())
+  guardianId              String
+  confirmedGuardianStatus Boolean
+  dataStorageConsent      Boolean
+  nonMedicalDeviceAck     Boolean
+  marketingOptIn          Boolean  @default(false)
+  consentTextVersion      String // e.g. "v1" — bump if consent copy ever changes
+  createdAt               DateTime @default(now())
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 02-child-profile-and-personalization.md, extended by 04 and 09 (merged form)
+// ───────────────────────────────────────────────────────────────────────────
+
+model Child {
+  id                  String    @id @default(cuid())
+  guardianId          String // one child per guardian for now — enforced in the service layer
+  nickname            String
+  age                 Int // validated 6–17
+  interests           String // JSON serialized array of strings
+  tutorialCompletedAt DateTime? // null until Tutorial Island finishes (02 §3.6)
+  activeTheme         String? // "space" | "ocean" | "jungle" — from 04 §4.1
+  totalStars          Int       @default(0) // from 09 §4.1
+  totalCoins          Int       @default(0) // from 09 §4.1
+  avatarBaseFace      String? // emoji; null until Tutorial Island's avatar step — 09 §4.1
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model ChildPreferences {
+  id                   String   @id @default(cuid())
+  childId              String   @unique
+  // raw answers only — UI parameters are derived at read-time (02 §4.4), never stored separately
+  q1Sound              String // "not_bothered" | "mildly_sensitive" | "very_sensitive"
+  q2Motion             String // "enjoys_motion" | "moderate_motion" | "prefers_calm"
+  q3Transitions        String // "transitions_easily" | "needs_warning" | "needs_countdown"
+  q4AttentionSpan      String // "under_3" | "3_to_7" | "7_to_15" | "15_plus"
+  q5SocialComfort      String // "very_comfortable" | "somewhat_shy" | "observes_first"
+  q6RegulationStrategy String // JSON serialized string array
+  q7CheckInStyle       String // "gentle_checkins" | "only_when_asked"
+  q8InstructionStyle   String // "icons_only" | "icons_plus_text" | "short_sentences" | "longer_text"
+  q9GuidanceNeeded     String // "independent" | "a_few_prompts" | "step_by_step"
+  q10Predictability    String // "really_helps" | "somewhat" | "not_major"
+  q11Motor             String // "no_difficulty" | "some_difficulty" | "significant_difficulty"
+  q12FirstFocusArea    String // JSON serialized string array
+  updatedAt            DateTime @updatedAt
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 03-companion-system.md
+// ───────────────────────────────────────────────────────────────────────────
+
+model CompanionTemplate {
+  speciesId        String  @id // "robot" | "dragon" | "owl" | "fox" | "turtle" | "octopus"
+  displayName      String
+  emoji            String
+  personalityBlurb String
+  isStarter        Boolean @default(false)
+  unlockLevel      Int? // null when isStarter is true
+}
+
+model ChildCompanion {
+  id         String   @id @default(cuid())
+  childId    String
+  speciesId  String // references CompanionTemplate.speciesId
+  customName String // the child-given name
+  isActive   Boolean  @default(false) // exactly one true per childId, enforced in the service layer
+  adoptedAt  DateTime @default(now())
+}
+
+model ZoneCheckIn {
+  id        String   @id @default(cuid())
+  childId   String
+  zone      String // "calm" | "okay" | "worried" | "big_feelings"
+  createdAt DateTime @default(now())
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 08-adaptive-difficulty.md
+// ───────────────────────────────────────────────────────────────────────────
+
+model GameDifficultyProfile {
+  id        String   @id @default(cuid())
+  childId   String
+  gameId    String // "launch-challenge" | "volcano-scale" | "face-detective"
+  tier      String // "easy" | "medium" | "hard"
+  updatedAt DateTime @updatedAt
+
+  @@unique([childId, gameId])
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 09-rewards-and-economy.md, QuestCompletion extended by 10 (merged form)
+// ───────────────────────────────────────────────────────────────────────────
+
+model GameProgress {
+  id                     String @id @default(cuid())
+  childId                String
+  gameId                 String // "launch-challenge" | "volcano-scale" | "face-detective"
+  completedSessionsCount Int    @default(0)
+  bossBattlesWonCount    Int    @default(0)
+
+  @@unique([childId, gameId])
+}
+
+model QuestCompletion {
+  id              String   @id @default(cuid())
+  childId         String
+  questType       String // "GAME" | "REAL_LIFE"
+  gameId          String? // set for GAME type, null for REAL_LIFE
+  mode            String? // "normal" | "boss", set for GAME type only
+  realLifeQuestId String? // set for REAL_LIFE type — from 10 §4.1
+  remindersLevel  String? // "none" | "a_couple" | "a_lot" | null (skipped) — REAL_LIFE only — from 10 §3.4
+  starsAwarded    Int
+  coinsAwarded    Int
+  completedAt     DateTime @default(now())
+}
+
+model ShopItemCatalog {
+  id          String @id // slug, e.g. "top-hat"
+  category    String // "avatar-headwear" | "avatar-eyewear" | "avatar-neckwear" | "companion-accessory"
+  emoji       String
+  displayName String
+  priceCoins  Int
+}
+
+model OwnedShopItem {
+  id          String   @id @default(cuid())
+  childId     String
+  itemId      String
+  equipped    Boolean  @default(false)
+  purchasedAt DateTime @default(now())
+}
+
+model CollectibleCatalog {
+  id          String @id
+  worldId     String // "time" | "feelings" | "faces"
+  emoji       String
+  displayName String
+}
+
+model OwnedCollectible {
+  id            String   @id @default(cuid())
+  childId       String
+  collectibleId String
+  earnedAt      DateTime @default(now())
+}
+
+model BadgeCatalog {
+  id          String @id
+  emoji       String
+  displayName String
+  description String
+}
+
+model EarnedBadge {
+  id       String   @id @default(cuid())
+  childId  String
+  badgeId  String
+  earnedAt DateTime @default(now())
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 10-guardian-dashboard.md
+// ───────────────────────────────────────────────────────────────────────────
+
+model RealLifeQuestTemplate {
+  id    String @id // "morning-routine" | "homework" | "meals" | "bath" | "bed"
+  label String
+  emoji String
+}
+
+model RealLifeQuest {
+  id           String   @id @default(cuid())
+  childId      String
+  templateId   String? // null if fully custom
+  label        String
+  emoji        String
+  scheduledFor DateTime // the calendar day this stop belongs to
+  orderIndex   Int // position within that day's Journey Line
+  rewardStars  Int      @default(10) // guardian-set, 5–50 enforced server-side
+  rewardCoins  Int      @default(5) // guardian-set, 0–25 enforced server-side
+  createdAt    DateTime @default(now())
+}
+
+model ScreenTimeSettings {
+  id              String  @id @default(cuid())
+  childId         String  @unique
+  quietHoursStart String? // "HH:mm", null = off
+  quietHoursEnd   String? // "HH:mm", null = off
+}
+
+model PlaySession {
+  id              String    @id @default(cuid())
+  childId         String
+  startedAt       DateTime  @default(now())
+  lastHeartbeatAt DateTime  @default(now()) // updated every 5 min while the child is in the Hub
+  endedAt         DateTime? // only ever set by an explicit end; the lazy 20-min cutoff is a read-time calculation
+}
