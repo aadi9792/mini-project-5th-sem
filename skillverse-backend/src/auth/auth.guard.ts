@@ -27,7 +27,7 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.config.get<string>('JWT_ACCESS_SECRET'),
       });
-      (request as any).user = payload;
+      (request as any).user = { ...payload, id: payload.sub };
       return true;
     } catch {
       throw new UnauthorizedException('Invalid or expired session.');
