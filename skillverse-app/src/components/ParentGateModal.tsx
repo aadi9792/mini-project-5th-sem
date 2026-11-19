@@ -25,8 +25,15 @@ export default function ParentGateModal({ intent, onSuccess, onCancel }: ParentG
       const res = await guardianClient.verifyPassword(password, intent);
       setToken(res.guardianActionToken, res.tier);
       onSuccess();
-    } catch {
-      setError('Incorrect password. Please try again.');
+    } catch (err: any) {
+      if (err?.status === 401 && (err?.message?.includes('Authentication') || err?.message?.includes('session') || err?.message?.includes('expired'))) {
+        setError('Your login session has expired. Redirecting to login...');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+      } else {
+        setError(err?.message || 'Incorrect password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

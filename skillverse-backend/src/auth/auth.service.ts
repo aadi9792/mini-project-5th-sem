@@ -231,7 +231,7 @@ export class AuthService {
     const payload = { sub: guardianId, email };
     const accessToken = this.jwtService.sign(payload, {
       secret: this.config.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: '15m',
+      expiresIn: '7d',
     });
 
     // Refresh token: 48 random bytes hex

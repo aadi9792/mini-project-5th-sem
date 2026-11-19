@@ -26,13 +26,13 @@ export class AuthController {
   private setAuthCookies(res: Response, accessToken: string, refreshToken: string, rememberMe: boolean) {
     const isProd = this.config.get<string>('NODE_ENV') === 'production';
 
-    // sv_access_token (15 min)
+    // sv_access_token (7 days in dev)
     res.cookie('sv_access_token', accessToken, {
       httpOnly: true,
       secure: isProd,
       sameSite: 'lax',
       path: '/',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     // sv_refresh_token (30 days if rememberMe, session cookie if not)
